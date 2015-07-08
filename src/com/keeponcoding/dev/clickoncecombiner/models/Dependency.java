@@ -5,26 +5,26 @@ package com.keeponcoding.dev.clickoncecombiner.models;
  */
 public class Dependency
 {
-    private String savePath;
-    private String fileName;
+    private String relativeUrl;
+    private String relativeSaveDir;
 
-    public String getSavePath()
+    public String getRelativeUrl()
     {
-        return savePath;
+        return relativeUrl;
     }
 
-    public void setSavePath(String savePath)
+    public void setRelativeUrl(String relativeUrl)
     {
-        this.savePath = savePath;
+        this.relativeUrl = relativeUrl;
     }
 
-    public String getFileName()
+    public String getRelativeSaveDir()
     {
-        return fileName;
+        return relativeSaveDir;
     }
 
-    public void setFileName(String fileName)
+    public void setRelativeSaveDir(String relativeSaveDir)
     {
-        this.fileName = fileName;
+        this.relativeSaveDir = relativeSaveDir;
     }
 }

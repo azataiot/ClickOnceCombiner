@@ -1,12 +1,11 @@
-package com.keeponcoding.dev.clickoncecombiner;
+package com.keeponcoding.dev.clickoncecombiner.processor;
 
 import com.keeponcoding.dev.clickoncecombiner.models.Dependency;
 import org.xml.sax.*;
 import org.xml.sax.helpers.DefaultHandler;
 import org.xml.sax.helpers.XMLReaderFactory;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
@@ -25,14 +24,32 @@ public class XmlParser extends DefaultHandler implements ErrorHandler
         return dependencies;
     }
 
-    public void parse(String xml)
+    public void parse(String filePath)
+    {
+        try
+        {
+            FileInputStream inputStream = new FileInputStream(filePath);
+            parse(inputStream);
+        }
+        catch (FileNotFoundException e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public void parseContent(String xml)
+    {
+        parse(new ByteArrayInputStream(xml.getBytes()));
+    }
+
+    public void parse(InputStream inputStream)
     {
         try
         {
             XMLReader xmlReader = XMLReaderFactory.createXMLReader();
             xmlReader.setContentHandler(this);
             xmlReader.setErrorHandler(this);
-            xmlReader.parse(new InputSource(new ByteArrayInputStream(xml.getBytes())));
+            xmlReader.parse(new InputSource(inputStream));
         }
         catch (SAXException | IOException e)
         {
@@ -44,32 +61,18 @@ public class XmlParser extends DefaultHandler implements ErrorHandler
     public void startDocument() throws SAXException
     {
         super.startDocument();
-//        System.out.println("Start Parse Document.");
     }
 
     @Override
     public void endDocument() throws SAXException
     {
         super.endDocument();
-//        System.out.println("End Parse Document.");
     }
 
     @Override
     public void startElement(String uri, String localName, String qName, Attributes attributes) throws SAXException
     {
         super.startElement(uri, localName, qName, attributes);
-//        System.out.println("Begin Parse Element");
-//        System.out.println("Element - qName: " + qName);
-//        System.out.println("Element - localName: " + localName);
-//        System.out.println("Element - uri: " + uri);
-//        for (int i = 0; i < attributes.getLength(); i++)
-//        {
-//            System.out.println("");
-//            System.out.println(" attribute qName: " + attributes.getQName(i));
-//            System.out.println(" attribute localName: " + attributes.getLocalName(i));
-//            System.out.println(" attribute uri: " + attributes.getURI(i));
-//            System.out.println(" attribute value: " + attributes.getValue(i));
-//        }
         if (qName.equals("dependentAssembly"))
         {
             String dependencyType = attributes.getValue("dependencyType");
@@ -79,11 +82,39 @@ public class XmlParser extends DefaultHandler implements ErrorHandler
                 if (codebase != null && codebase.length() > 0 )
                 {
                     Dependency dependency = new Dependency();
-                    dependency.setSavePath(codebase.replace("\\", "/"));
-                    Path path = Paths.get(codebase);
-                    dependency.setFileName(path.getFileName().toString());
+                    if (codebase.contains("\\"))
+                    {
+                        String tempPath = codebase.replace("\\", "/");
+                        dependency.setRelativeUrl(tempPath);
+                        dependency.setRelativeSaveDir(tempPath.substring(0, tempPath.lastIndexOf("/")));
+                    }
+                    else
+                    {
+                        dependency.setRelativeUrl(codebase);
+                        dependency.setRelativeSaveDir("");
+                    }
                     dependencies.add(dependency);
                 }
+            }
+        }
+        if (qName.equals("file"))
+        {
+            String fileName = attributes.getValue("name");
+            if (fileName != null && fileName.length() > 0 )
+            {
+                Dependency dependency = new Dependency();
+                if (fileName.contains("\\"))
+                {
+                    String tempPath = fileName.replace("\\", "/");
+                    dependency.setRelativeUrl(tempPath);
+                    dependency.setRelativeSaveDir(tempPath.substring(0, tempPath.lastIndexOf("/")));
+                }
+                else
+                {
+                    dependency.setRelativeUrl(fileName);
+                    dependency.setRelativeSaveDir("");
+                }
+                dependencies.add(dependency);
             }
         }
     }
@@ -92,15 +123,11 @@ public class XmlParser extends DefaultHandler implements ErrorHandler
     public void endElement(String uri, String localName, String qName) throws SAXException
     {
         super.endElement(uri, localName, qName);
-//        System.out.println("Begin Parse Element");
     }
 
     @Override
     public void characters(char[] ch, int start, int length) throws SAXException
     {
         super.characters(ch, start, length);
-//        System.out.println("Parse Content is :" + new String(ch));
-//        System.out.println("Parse Content start index: " + start);
-//        System.out.println("Parse Content lenght: " + length);
     }
 }
